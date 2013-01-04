@@ -39,9 +39,18 @@
 #This class depends heavily on the installer behaviour.
 #It's probably better to use this class to setup a jira instance to package up.
 class jira::installer {
-  $jiraVersion = "4.4.4-x32"
+  include wget
+  
+  # http://www.atlassian.com/software/jira/downloads/binary/atlassian-jira-5.2.4-x64.bin
+  $jiraVersion = "5.2.4-x64"
   $jiraInstallerFileName = "atlassian-jira-${jiraVersion}.bin"
   $jiraInstallDir = "/opt/atlassian/jira"
+
+  wget::fetch { "download-jira":
+    source => "http://www.atlassian.com/software/jira/downloads/binary/${jiraInstallerFileName}",
+    destination => "/tmp/${jiraInstallerFileName}",
+    timeout => 30,
+  }
 
   file { 'responsefile':
     path    => "${jiraInstallDir}/.install4j/response.varfile",
@@ -54,10 +63,17 @@ class jira::installer {
     mode   => 755,
   }   
 
+  # TODO subscribe to wget
   exec { 'atlassian-installer-exec':
     command     => "/tmp/${jiraInstallerFileName}",
     refreshonly => true,
     subscribe   => File["atlassian-installer"],
   } 
+
+  # TODO subscribe this link  
+  file {'/opt/atlassian/jira/current':
+     ensure => link,
+     target => '/opt/atlassian/jira/atlassian-jira-${jiraVersion}',
+   }
 
 }
