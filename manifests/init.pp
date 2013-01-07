@@ -42,63 +42,54 @@ class jira::installer {
   include wget
 
   # http://www.atlassian.com/software/jira/downloads/binary/atlassian-jira-5.2.4-x64.bin
+  $atlassianDir = "/opt/atlassian"
   $jiraVersion = "5.2.4-x64"
   $jiraInstallerFileName = "atlassian-jira-${jiraVersion}.bin"
-  $atlassianDir = "/opt/atlassian"
   $jiraInstallDir = "${atlassianDir}/jira"
 
-  wget::fetch { "atlassian-installer":
+  wget::fetch { "jira-installer":
     source      => "http://www.atlassian.com/software/jira/downloads/binary/${jiraInstallerFileName}",
     destination => "/tmp/${jiraInstallerFileName}",
     timeout     => 7200, # 2h
-    notify      => File['executable-installer'],
   }
 
   file { 'executable-installer':
-    path   => "/tmp/${jiraInstallerFileName}",
     ensure => 'present',
+    path   => "/tmp/${jiraInstallerFileName}",
     group  => 'jira',
     owner  => 'jira',
     mode   => 755,
   }
 
-  group { 'jira': ensure => present, }
-
-  file { 'atlassianDir':
-    path   => "${atlassianDir}",
+  file { 'atlassian-dir':
     ensure => "directory",
+    path   => "${atlassianDir}",
     owner  => root,
     group  => root,
   }
 
-  file { 'jiraInstallDir':
+  file { 'jira-home':
     path    => "${jiraInstallDir}",
     ensure  => "directory",
-    require => File['atlassianDir'],
+    require => File['atlassian-dir'],
     group   => 'jira',
     owner   => 'jira',
   }
+
+  group { 'jira': ensure => present, }
 
   user { 'jira':
     ensure     => present,
     comment    => "Jira user",
     gid        => "jira",
     shell      => "/bin/bash",
-    require    => [File['jiraInstallDir'], Group["jira"]],
+    require    => [File['jira-home'], Group["jira"]],
     managehome => true,
     home       => "${jiraInstallDir}",
   }
 
-  file { 'install4jDir':
-    path    => "${jiraInstallDir}/.install4j/",
-    require => User['jira'],
-    ensure  => "directory",
-    group   => 'jira',
-    owner   => 'jira',
-  }
-
-  file { 'responsefile':
-    path    => "${jiraInstallDir}/.install4j/response.varfile",
+  file { 'response-file':
+    path    => "${jiraInstallDir}/.response.varfile",
     content => template('jira/response.varfile.erb'),
     group   => 'jira',
     owner   => 'jira',
@@ -107,17 +98,18 @@ class jira::installer {
   exec { 'atlassian-installer-exec':
     path      => "/usr/bin:/usr/sbin:/bin",
     unless    => "test -d ${jiraInstallDir}/atlassian-jira-${jiraVersion}",
-    command   => "/tmp/${jiraInstallerFileName} -q -varfile ${jiraInstallDir}/.install4j/response.varfile",
+    command   => "/tmp/${jiraInstallerFileName} -q -varfile ${jiraInstallDir}/.response.varfile",
     cwd       => "${jiraInstallDir}/",
     user      => "jira",
     timeout   => 7200, # 2h
-    subscribe => Wget::Fetch["atlassian-installer"],
-    notify    => File["currentJiraLink"],
+    require   => File['response-file'],
+    subscribe => [Wget::Fetch["jira-installer"], File['executable-installer']],
+    notify    => File["current-jira-link"],
   }
 
-  file { 'currentJiraLink':
+  file { 'current-jira-link':
     require => User['jira'],
-    path    => "${jiraInstallDir}/current",
+    path    => "${jiraInstallDir}/current-jira",
     ensure  => link,
     target  => "${jiraInstallDir}/atlassian-jira-${jiraVersion}",
   }
