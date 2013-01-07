@@ -41,9 +41,16 @@
 class jira::installer {
   include wget
 
-  # http://www.atlassian.com/software/jira/downloads/binary/atlassian-jira-5.2.4-x64.bin
+  $variant = $architecture ? {
+      amd64 => 'x64',
+      x86_64 => 'x64',
+      default => 'x32',
+  }
+  # Change version number in order to install a more recent Jira version
+  # Remember to verify that the response.varfile.erb template has the correct contents
+  $jiraVersion = "5.2.4-${variant}"
+  
   $atlassianDir = "/opt/atlassian"
-  $jiraVersion = "5.2.4-x64"
   $jiraInstallerFileName = "atlassian-jira-${jiraVersion}.bin"
   $jiraInstallDir = "${atlassianDir}/jira"
 
@@ -59,23 +66,14 @@ class jira::installer {
     group  => 'jira',
     owner  => 'jira',
     mode   => 755,
+    require => Wget::Fetch["jira-installer"],
   }
 
   file { 'atlassian-dir':
     ensure => "directory",
     path   => "${atlassianDir}",
-    owner  => root,
-    group  => root,
   }
-
-  file { 'jira-home':
-    path    => "${jiraInstallDir}",
-    ensure  => "directory",
-    require => File['atlassian-dir'],
-    group   => 'jira',
-    owner   => 'jira',
-  }
-
+  
   group { 'jira': ensure => present, }
 
   user { 'jira':
@@ -83,7 +81,7 @@ class jira::installer {
     comment    => "Jira user",
     gid        => "jira",
     shell      => "/bin/bash",
-    require    => [File['jira-home'], Group["jira"]],
+    require    => Group["jira"],
     managehome => true,
     home       => "${jiraInstallDir}",
   }
@@ -102,8 +100,7 @@ class jira::installer {
     cwd       => "${jiraInstallDir}/",
     user      => "jira",
     timeout   => 7200, # 2h
-    require   => File['response-file'],
-    subscribe => [Wget::Fetch["jira-installer"], File['executable-installer']],
+    require => [File['executable-installer'], File['response-file'] ],
     notify    => File["current-jira-link"],
   }
 
