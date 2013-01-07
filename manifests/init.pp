@@ -46,10 +46,11 @@ class jira::installer {
   $jiraInstallerFileName = "atlassian-jira-${jiraVersion}.bin"
   $jiraInstallDir = "/opt/atlassian/jira"
 
-  wget::fetch { "download-jira":
+  wget::fetch { "atlassian-installer":
     source => "http://www.atlassian.com/software/jira/downloads/binary/${jiraInstallerFileName}",
     destination => "/tmp/${jiraInstallerFileName}",
     timeout => 30,
+    mode   => 755,
   }
 
   file { 'responsefile':
@@ -57,21 +58,14 @@ class jira::installer {
     content => template('jira/response.varfile.erb'),   
   }
   
-  file { 'atlassian-installer':
-    path   => "/tmp/${jiraInstallerFileName}",
-    source => "puppet:///modules/jira/${jiraInstallerFileName}",
-    mode   => 755,
-  }   
-
-  # TODO subscribe to wget
   exec { 'atlassian-installer-exec':
     command     => "/tmp/${jiraInstallerFileName}",
     refreshonly => true,
-    subscribe   => File["atlassian-installer"],
+    subscribe   => Wget["atlassian-installer"],
+    notify      => File["/opt/atlassian/jira/current"],
   } 
 
-  # TODO subscribe this link  
-  file {'/opt/atlassian/jira/current':
+  file {"/opt/atlassian/jira/current":
      ensure => link,
      target => '/opt/atlassian/jira/atlassian-jira-${jiraVersion}',
    }
