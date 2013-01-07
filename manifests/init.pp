@@ -50,7 +50,7 @@ class jira::installer {
   wget::fetch { "atlassian-installer":
     source      => "http://www.atlassian.com/software/jira/downloads/binary/${jiraInstallerFileName}",
     destination => "/tmp/${jiraInstallerFileName}",
-    timeout     => 0,
+    timeout     => 7200, # 2h
     notify      => File['executable-installer'],
   }
 
@@ -105,14 +105,14 @@ class jira::installer {
   }
 
   exec { 'atlassian-installer-exec':
-    path   => "/usr/bin:/usr/sbin:/bin",
-    unless      => "test -d ${jiraInstallDir}/atlassian-jira-${jiraVersion}",
-    command     => "/tmp/${jiraInstallerFileName} -q -varfile ${jiraInstallDir}/.install4j/response.varfile",
-    cwd         => "${jiraInstallDir}/",
-    user        => "jira",
-    #refreshonly => true,
-    subscribe   => Wget::Fetch["atlassian-installer"],
-    notify      => File["currentJiraLink"],
+    path      => "/usr/bin:/usr/sbin:/bin",
+    unless    => "test -d ${jiraInstallDir}/atlassian-jira-${jiraVersion}",
+    command   => "/tmp/${jiraInstallerFileName} -q -varfile ${jiraInstallDir}/.install4j/response.varfile",
+    cwd       => "${jiraInstallDir}/",
+    user      => "jira",
+    timeout   => 7200, # 2h
+    subscribe => Wget::Fetch["atlassian-installer"],
+    notify    => File["currentJiraLink"],
   }
 
   file { 'currentJiraLink':
