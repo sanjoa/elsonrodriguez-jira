@@ -26,7 +26,7 @@ class atlassian::base {
 
   }
 
-  define atlassianinstance ($installerFileName, $installDir, $version) {
+  define atlassianinstance ($installerFileName, $installDir, $version, $httpPort = 8080, $rmiPort = 8005) {
     File {
       owner => "${name}",
       group => "${name}",
@@ -49,7 +49,7 @@ class atlassian::base {
       path    => "${installDir}/.response.varfile",
       content => template("atlassian/${name}-response.varfile.erb"),
     }
-    
+
     exec { 'atlassian-installer-exec':
       path    => "/usr/bin:/usr/sbin:/bin",
       unless  => "test -d ${installDir}/atlassian-${name}-${version}",
@@ -62,9 +62,9 @@ class atlassian::base {
     }
 
     file { 'current-link':
-      path    => "${installDir}/current",
-      ensure  => link,
-      target  => "${installDir}/atlassian-${name}-${version}",
+      path   => "${installDir}/current",
+      ensure => link,
+      target => "${installDir}/atlassian-${name}-${version}",
     }
 
   }
