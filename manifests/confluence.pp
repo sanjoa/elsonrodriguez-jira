@@ -1,4 +1,4 @@
-class confluence::installer inherits atlassian::installer {
+class atlassian::confluence inherits atlassian::base {
   # Change version number in order to install a more recent confluence version
   # Remember to verify that the response.varfile.erb template has the correct contents
   $confluenceVersion = "4.3.5-${variant}"
@@ -6,14 +6,14 @@ class confluence::installer inherits atlassian::installer {
   $confluenceInstallerFileName = "atlassian-confluence-${confluenceVersion}.bin"
   $confluenceInstallDir = "${atlassianDir}/confluence"
 
-  @atlassian::installer::atlassianUser { 'confluence': home => '${confluenceInstallDir}' }
-  realize(AtlassianUser[confluence])
+  @atlassian::installer::atlassianuser { 'confluence': home => '${confluenceInstallDir}' }
+  realize(Atlassianuser[confluence])
 
-  @atlassian::installer::atlassianInstance { 'confluence':
+  @atlassian::installer::atlassianinstance { 'confluence':
     installerFileName => $confluenceInstallerFileName,
     installDir        => $confluenceInstallDir,
     version           => $confluenceVersion,
   }
-  realize(AtlassianInstance[confluence])
+  realize(Atlassianinstance[confluence])
 
 }

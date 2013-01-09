@@ -1,4 +1,4 @@
-class atlassian::installer {
+class atlassian::base {
   $variant = $architecture ? {
     amd64   => 'x64',
     x86_64  => 'x64',
@@ -11,7 +11,7 @@ class atlassian::installer {
     path   => "${atlassianDir}",
   }
 
-  define atlassianUser ($home) {
+  define atlassianuser ($home) {
     group { "${name}": ensure => present, }
 
     user { "${name}":
@@ -26,7 +26,7 @@ class atlassian::installer {
 
   }
 
-  define atlassianInstance ($installerFileName, $installDir, $version) {
+  define atlassianinstance ($installerFileName, $installDir, $version) {
     File {
       owner => "${name}",
       group => "${name}",
