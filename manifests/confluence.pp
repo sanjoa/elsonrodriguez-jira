@@ -6,7 +6,7 @@ class atlassian::confluence inherits atlassian::base {
   $confluenceInstallerFileName = "atlassian-confluence-${confluenceVersion}.bin"
   $confluenceInstallDir = "${atlassianDir}/confluence"
 
-  @atlassian::base::atlassianuser { 'confluence': home => '${confluenceInstallDir}' }
+  @atlassian::base::atlassianuser { 'confluence': home => $confluenceInstallDir }
   realize(Atlassian::Base::Atlassianuser[confluence])
 
   @atlassian::base::atlassianinstance { 'confluence':
