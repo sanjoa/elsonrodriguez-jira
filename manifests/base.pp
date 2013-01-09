@@ -8,31 +8,31 @@ class atlassian::base {
 
   file { 'atlassian-dir':
     ensure => 'directory',
-    path   => "${atlassianDir}",
+    path   => $atlassianDir,
   }
 
   define atlassianuser ($home) {
-    group { "${name}": ensure => present, }
+    group { $name: ensure => present, }
 
-    user { "${name}":
+    user { $name:
       ensure     => present,
       comment    => "${name} user",
-      gid        => "${name}",
+      gid        => $name,
       shell      => "/bin/bash",
-      require    => Group["$name"],
+      require    => Group[$name],
       managehome => true,
-      home       => "${home}",
+      home       => $home,
     }
 
   }
 
   define atlassianinstance ($installerFileName, $installDir, $version, $httpPort = 8080, $rmiPort = 8005) {
     File {
-      owner => "${name}",
-      group => "${name}",
+      owner => $name,
+      group => $name,
     }
 
-    wget::fetch { "installer":
+    wget::fetch { 'installer':
       source      => "http://www.atlassian.com/software/${name}/downloads/binary/${installerFileName}",
       destination => "/tmp/${installerFileName}",
       timeout     => 7200, # 2h
@@ -42,12 +42,13 @@ class atlassian::base {
       ensure  => 'present',
       path    => "/tmp/${installerFileName}",
       mode    => 755,
-      require => Wget::Fetch["installer"],
+      require => [Wget::Fetch["installer"], User[$name]],
     }
 
     file { 'response-file':
       path    => "${installDir}/.response.varfile",
       content => template("atlassian/${name}-response.varfile.erb"),
+      require => User[$name],
     }
 
     exec { 'atlassian-installer-exec':
