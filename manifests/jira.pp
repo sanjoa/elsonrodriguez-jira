@@ -6,14 +6,14 @@ class atlassian::jira inherits atlassian::base {
   $jiraInstallerFileName = "atlassian-jira-${jiraVersion}.bin"
   $jiraInstallDir = "${atlassianDir}/jira"
 
-  @atlassian::installer::atlassianuser { 'jira': home => '${jiraInstallDir}' }
-  realize(Atlassianuser[jira])
+  @atlassian::base::atlassianuser { 'jira': home => '${jiraInstallDir}' }
+  realize(Atlassian::Base::Atlassianuser[jira])
 
-  @atlassian::installer::atlassianinstance { 'jira':
+  @atlassian::base::atlassianinstance { 'jira':
     installerFileName => $jiraInstallerFileName,
     installDir        => $jiraInstallDir,
     version           => $jiraVersion,
   }
-  realize(Atlassianinstance[jira])
+  realize(Atlassian::Base::Atlassianinstance[jira])
 
 }

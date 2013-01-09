@@ -7,7 +7,7 @@ class atlassian::base {
   $atlassianDir = "/opt/atlassian"
 
   file { 'atlassian-dir':
-    ensure => "directory",
+    ensure => 'directory',
     path   => "${atlassianDir}",
   }
 
@@ -47,9 +47,9 @@ class atlassian::base {
 
     file { 'response-file':
       path    => "${installDir}/.response.varfile",
-      content => template('jira/${name}-response.varfile.erb'),
+      content => template("atlassian/${name}-response.varfile.erb"),
     }
-
+    
     exec { 'atlassian-installer-exec':
       path    => "/usr/bin:/usr/sbin:/bin",
       unless  => "test -d ${installDir}/atlassian-${name}-${version}",
