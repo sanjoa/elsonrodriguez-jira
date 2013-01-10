@@ -43,7 +43,7 @@ class atlassian::base {
 
     file { 'executable-installer':
       ensure  => 'present',
-      path    => "/tmp/${installerFileName}",
+      path    => "${installDir}/${installerFileName}",
       mode    => 755,
       require => [Wget::Fetch["installer"], User[$name]],
     }
