@@ -37,13 +37,13 @@ class atlassian::base {
 
     wget::fetch { 'installer':
       source      => "http://www.atlassian.com/software/${name}/downloads/binary/${installerFileName}",
-      destination => "/tmp/${installerFileName}",
+      destination => "${installDir}/${installerFileName}",
       timeout     => 7200, # 2h
     }
 
     file { 'executable-installer':
       ensure  => 'present',
-      path    => "/tmp/${installerFileName}",
+      path    => "${installDir}/${installerFileName}",
       mode    => 755,
       require => [Wget::Fetch["installer"], User[$name]],
     }
@@ -57,7 +57,7 @@ class atlassian::base {
     exec { 'atlassian-installer-exec':
       path    => '/usr/bin:/usr/sbin:/bin',
       unless  => "test -d ${appDir}",
-      command => "/tmp/${installerFileName} -q -varfile ${installDir}/.response.varfile",
+      command => "${installDir}/${installerFileName} -q -varfile ${installDir}/.response.varfile",
       cwd     => $installDir,
       user    => $name,
       timeout => 7200, # 2h
