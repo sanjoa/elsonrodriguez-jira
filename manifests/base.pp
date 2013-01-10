@@ -4,6 +4,7 @@ class atlassian::base {
   file { 'atlassian-dir':
     ensure => 'directory',
     path   => $atlassianDir,
+    mode    => 744,    
   }
 
   define atlassianuser ($home) {
