@@ -1,9 +1,4 @@
 class atlassian::base {
-  $variant = $architecture ? {
-    amd64   => 'x64',
-    x86_64  => 'x64',
-    default => 'x32',
-  }
   $atlassianDir = "/opt/atlassian"
 
   file { 'atlassian-dir':
@@ -18,7 +13,7 @@ class atlassian::base {
       ensure     => present,
       comment    => "${name} user",
       gid        => $name,
-      shell      => "/bin/bash",
+      shell      => '/bin/bash',
       require    => Group[$name],
       managehome => true,
       home       => $home,
@@ -26,7 +21,14 @@ class atlassian::base {
 
   }
 
-  define atlassianinstance ($installerFileName, $installDir, $version, $httpPort = 8080, $rmiPort = 8005) {
+  define atlassianinstance ($installDir, $version, $dataDir, $httpPort = 8080, $rmiPort = 8005) {
+    $variant = $architecture ? {
+      i386    => 'x32',
+      default => 'x64',
+    }
+    $appDir = "${installDir}/atlassian-${name}-${version}"
+    $installerFileName = "atlassian-${name}-${version}-${variant}.bin"
+
     File {
       owner => $name,
       group => $name,
@@ -52,22 +54,27 @@ class atlassian::base {
     }
 
     exec { 'atlassian-installer-exec':
-      path    => "/usr/bin:/usr/sbin:/bin",
-      unless  => "test -d ${installDir}/atlassian-${name}-${version}",
+      path    => '/usr/bin:/usr/sbin:/bin',
+      unless  => "test -d ${appDir}",
       command => "/tmp/${installerFileName} -q -varfile ${installDir}/.response.varfile",
-      cwd     => "${installDir}/",
-      user    => "${name}",
+      cwd     => $installDir,
+      user    => $name,
       timeout => 7200, # 2h
       require => [File['executable-installer'], File['response-file']],
-      notify  => File["current-link"],
+      notify  => [File["current-version-link"], File['current-data-link']],
     }
 
-    file { 'current-link':
-      path   => "${installDir}/current",
+    file { 'current-version-link':
+      path   => "${installDir}/current-${name}",
       ensure => link,
-      target => "${installDir}/atlassian-${name}-${version}",
+      target => $appDir,
     }
 
+    file { 'current-data-link':
+      path   => "${installDir}/current-data",
+      ensure => link,
+      target => $dataDir,
+    }
   }
 
 }
