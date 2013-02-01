@@ -23,7 +23,7 @@ class atlassian::stash inherits atlassian::base {
   file { 'current-version-link':
     path   => "${stashInstallDir}/current",
     ensure => link,
-    target => $appDir,
+    target => "${stashInstallDir}/atlassian-stash-${stashVersion}",
   }
 
   file { 'data-dir':
