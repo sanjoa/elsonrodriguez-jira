@@ -17,7 +17,7 @@ class atlassian::stash inherits atlassian::base {
     cwd     => $stashInstallDir,
     user    => 'stash',
     timeout => 7200, # 2h
-    notify  => [File["current-version-link"], File['current-data-link'], File['mysql-driver']],
+    notify  => [File["current-version-link"], File['current-data-link'], File['mysql-driver'], Line['stash-home'], Line['java-home']],
   }
 
   file { 'current-version-link':
