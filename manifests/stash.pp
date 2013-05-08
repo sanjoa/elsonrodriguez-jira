@@ -1,9 +1,10 @@
 class atlassian::stash inherits atlassian::base {
   # Change version number in order to install a more recent stash version
   # Remember to verify that the response.varfile.erb template has the correct contents
-  $stashVersion = "2.1.0"
+  $stashVersion = "2.4.1"
 
   $stashInstallDir = "${atlassianDir}/stash"
+  $serverProxyName = 'git.aktia.bank'
 
   @atlassian::base::atlassianuser { 'stash': home => $stashInstallDir }
   realize(Atlassian::Base::Atlassianuser[stash])
@@ -17,7 +18,12 @@ class atlassian::stash inherits atlassian::base {
     cwd     => $stashInstallDir,
     user    => 'stash',
     timeout => 7200, # 2h
-    notify  => [File["current-version-link"], File['current-data-link'], File['mysql-driver'], Line['stash-home'], Line['java-home']],
+    notify  => [
+      File["current-version-link"],
+      File['current-data-link'],
+      File['mysql-driver'],
+      Line['stash-home'],
+      Line['java-home']],
   }
 
   file { 'current-version-link':
@@ -56,7 +62,7 @@ class atlassian::stash inherits atlassian::base {
   # TODO externalize java home path
   line { 'java-home':
     file => "${stashInstallDir}/current/bin/setenv.sh",
-    line => "export JAVA_HOME=/usr/lib/jvm/jdk1.6.0_38/"
+    line => "export JAVA_HOME=/usr/lib/jvm/jdk1.6.0_39/"
   }
 
   line { 'host':
@@ -64,13 +70,38 @@ class atlassian::stash inherits atlassian::base {
     line => "${ipaddress}   ${fqdn} ${hostname}"
   }
 
-  define line ($file, $line, $ensure = 'present') {
+  file { 'server.xml':
+    path    => "${stashInstallDir}/current/conf/server.xml",
+    content => template("atlassian/stash.server.xml.erb"),
+    owner  => 'stash',
+    group  => 'stash',
+  }
+
+
+  line { 'proxy-host':
+    file => '/etc/hosts',
+    line => '10.6.8.10  aktia.proxy',
+  }
+
+  line { 'proxy-config':
+    file => '/opt/atlassian/stash/current/bin/setenv.sh',
+    line => 'JAVA_OPTS="-Dhttp.proxyHost=aktia.proxy -Dhttp.proxyPort=8080 -Dhttp.nonProxyHosts=*.aktia.bank"',
+  }
+
+
+  define line ($file, $line, $position = 'start', $ensure = 'present') {
+    case $position {
+      start   : { $pos = '1i' }
+      end     : { $pos = '$a' }
+      default : { $pos = $position }
+    }
+
     case $ensure {
       default : {
         err("unknown ensure value ${ensure}")
       }
       present : {
-        exec { "/bin/sed -i '1i${line}' ${file}": unless => "/bin/grep -qFx '${line}' '${file}'" }
+        exec { "/bin/sed -i '${pos}${line}' ${file}": unless => "/bin/grep -qFx '${line}' '${file}'" }
       }
       absent  : {
         exec { "/bin/grep -vFx '${line}' '${file}' | /usr/bin/tee '${file}' > /dev/null 2>&1": onlyif => "/bin/grep -qFx '${line}' '${file}'" 
